@@ -12,6 +12,8 @@ type User struct {
 	Mobile       string `gorm:"size:20;unique_index"`
 	WechatOpenID string `gorm:"size:100;unique_index"`
 	Password     string `gorm:"size:100"`
+	Money        int
+	Exp          int
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -20,7 +22,9 @@ func (u *User) TableName() string {
 	return "user"
 }
 
-func CreateUser(db *gorm.DB, user *User) error {
+func CreateUser(db *gorm.DB, user *User) (err error) {
+	//返回id
+	//  db.Create(user).LastInsertId()
 	return db.Create(user).Error
 }
 

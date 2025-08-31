@@ -14,7 +14,7 @@ func main() {
 	// 加载.env文件
 	_ = godotenv.Load()
 	// 初始化数据库连接
-	database.InitDB()
+	// database.InitDB()
 	database.InitRedis()
 
 	r := gin.Default()
