@@ -22,7 +22,7 @@ func main() {
 	// 认证路由组
 	authGroup := r.Group("/auth")
 	{
-		authGroup.POST("/mobile/register", controllers.MobileRegister)
+		authGroup.POST("/account/register", controllers.AccountRegister)
 		authGroup.POST("/wechat/register", controllers.WechatRegister)
 		authGroup.POST("/login", controllers.UsernameLogin)
 		authGroup.POST("/wechat/login", controllers.WechatLogin)
@@ -33,7 +33,9 @@ func main() {
 	authorized := r.Group("/")
 	authorized.Use(middleware.JWTAuthMiddleware())
 	{
-		// authorized.GET("/auth", controllers.GetProfile)
+		authorized.GET("/user/getUserInfo", controllers.GetUserInfo)
+		// authorized.POST("/user/updateUserInfo", controllers.UpdateUserInfo)
+
 	}
 
 	port := os.Getenv("PORT")

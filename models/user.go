@@ -7,13 +7,13 @@ import (
 )
 
 type User struct {
-	ID           uint   `gorm:"primary_key"`
+	ID           int64  `gorm:"primary_key"`
 	Username     string `gorm:"size:50;unique_index"`
 	Mobile       string `gorm:"size:20;unique_index"`
 	WechatOpenID string `gorm:"size:100;unique_index"`
 	Password     string `gorm:"size:100"`
-	Money        int
-	Exp          int
+	Money        uint64
+	Exp          uint64
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }

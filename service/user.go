@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"game/models"
+	"game/utils"
 
 	"fmt"
 
@@ -46,10 +47,15 @@ func (s *UserService) CreateUser(req *CreateUserRequest) (user *models.User, err
 		Password:     req.Password,
 		Username:     req.Username,
 		WechatOpenID: req.WechatOpenID,
+		Money:        0,
+		Exp:          0,
 	}
-	// if err := models.CreateUser(s.db, user); err != nil {
-	// 	return nil, err
-	// }
+	//随机生成id
+	snow := &utils.Snowflake{}
+	user.ID = snow.GenerateID()
+	if err := models.CreateUser(s.db, user); err != nil {
+		return nil, err
+	}
 	userStr, err := json.Marshal(*user)
 	if err != nil {
 		return nil, err

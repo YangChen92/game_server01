@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"game/database"
 	"game/models"
 	"game/service"
@@ -62,12 +63,17 @@ func MobileRegister(c *gin.Context) {
 		Username:     req.Username,
 		WechatOpenID: "",
 	}
-	if _, err := userService.CreateUser(createReq); err != nil {
+	token := ""
+	if userInfo, err := userService.CreateUser(createReq); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "注册失败"})
 		return
+	} else {
+		//TODO: 注册成功返回token
+		token, err = utils.GenerateToken(userInfo.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "生成token失败"})
+		}
 	}
-
-	// user := models.User{
 	// 	Mobile:   req.Mobile,
 	// 	Password: hashedPassword,
 	// }
@@ -78,7 +84,63 @@ func MobileRegister(c *gin.Context) {
 	// 	return
 	// }
 	//TODO: 注册成功返回token
-	c.JSON(http.StatusCreated, gin.H{"message": "注册成功"})
+	c.JSON(http.StatusCreated, gin.H{"message": "注册成功", "token": token})
+}
+
+func AccountRegister(c *gin.Context) {
+	type Request struct {
+		Username string `json:"username",binding:"required,len=50"`
+		Password string `json:"password",binding:"required,min=6,max=20"`
+	}
+	var req Request
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	//TODO: 验证用户名是否已注册
+	db := database.GetDB()
+	if _, err := models.GetUserByUsername(db, req.Username); err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "用户名已注册"})
+		return
+	}
+	//密码加密
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码加密失败"})
+		return
+	}
+	//TODO: 创建用户对象
+	redisClient := database.GetRedis()
+	userService := service.NewUserService(db, redisClient)
+	createReq := &service.CreateUserRequest{
+		Mobile:       "",
+		Password:     hashedPassword,
+		Username:     req.Username,
+		WechatOpenID: "",
+	}
+	token := ""
+	if userInfo, err := userService.CreateUser(createReq); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "注册失败"})
+		return
+	} else {
+		//TODO: 注册成功返回token
+		token, err = utils.GenerateToken(userInfo.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "生成token失败"})
+		}
+	}
+	// //TODO: 创建用户对象
+	// user := models.User{
+	// 	Username: req.Username,
+	// 	Password: hashedPassword,
+	// }
+	// //TODO: 保存用户信息到数据库
+	// if err := models.CreateUser(db, &user); err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "注册失败"})
+	// 	return
+	// }
+	//TODO: 注册成功返回token
+	c.JSON(http.StatusCreated, gin.H{"message": "注册成功", "token": token})
 }
 
 // 微信小程序注册
@@ -124,9 +186,22 @@ func WechatRegister(c *gin.Context) {
 		Username:     req.Username,
 		WechatOpenID: req.WechatOpenID,
 	}
-	if _, err := userService.CreateUser(createReq); err != nil {
+	token := ""
+	strUserInfo := []byte("")
+	if userInfo, err := userService.CreateUser(createReq); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "注册失败"})
 		return
+	} else {
+		token, err = utils.GenerateToken(userInfo.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "生成token失败"})
+			return
+		}
+		strUserInfo, err = json.Marshal(userInfo)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "strUserInfo error"})
+			return
+		}
 	}
 	// //TODO: 创建用户对象
 	// user := models.User{
@@ -141,7 +216,8 @@ func WechatRegister(c *gin.Context) {
 	// 	return
 	// }
 	//TODO: 注册成功返回token
-	c.JSON(http.StatusCreated, gin.H{"message": "注册成功"})
+
+	c.JSON(http.StatusCreated, gin.H{"message": "注册成功", "token": token, "userInfo": strUserInfo})
 
 }
 
