@@ -9,3 +9,7 @@ func GetUserKey(userId int64) string {
 func GetCaptchaKey(mobile int64) string {
 	return "captcha:" + strconv.FormatInt(mobile, 10)
 }
+
+func GetIDbyNameKey(name string) string {
+	return "idbyname:" + name
+}

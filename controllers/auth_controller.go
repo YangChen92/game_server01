@@ -6,6 +6,7 @@ import (
 	"game/models"
 	"game/service"
 	"game/utils"
+	redisService "game/utils/redis"
 	"net/http"
 	"time"
 
@@ -98,11 +99,20 @@ func AccountRegister(c *gin.Context) {
 		return
 	}
 	//TODO: 验证用户名是否已注册
-	db := database.GetDB()
-	if _, err := models.GetUserByUsername(db, req.Username); err == nil {
+	// if _, err := models.GetUserByUsername(db, req.Username); err == nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "用户名已注册"})
+	// 	return
+	// }
+	userID, err := redisService.GetIDbyName(req.Username)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "用户名或密码错误"})
+		return
+	}
+	if userID != 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "用户名已注册"})
 		return
 	}
+
 	//密码加密
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
@@ -111,6 +121,7 @@ func AccountRegister(c *gin.Context) {
 	}
 	//TODO: 创建用户对象
 	redisClient := database.GetRedis()
+	db := database.GetDB()
 	userService := service.NewUserService(db, redisClient)
 	createReq := &service.CreateUserRequest{
 		Mobile:       "",

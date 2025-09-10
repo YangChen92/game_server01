@@ -53,15 +53,18 @@ func (s *UserService) CreateUser(req *CreateUserRequest) (user *models.User, err
 	//随机生成id
 	snow := &utils.Snowflake{}
 	user.ID = snow.GenerateID()
-	if err := models.CreateUser(s.db, user); err != nil {
-		return nil, err
-	}
+	// if err := models.CreateUser(s.db, user); err != nil {
+	// 	return nil, err
+	// }
 	userStr, err := json.Marshal(*user)
 	if err != nil {
 		return nil, err
 	}
 	//redis 所有用户信息hash存储
-	if err := s.redisClient.HSet("users", "user:"+fmt.Sprint(user.ID), userStr).Err(); err != nil {
+	if err := s.redisClient.HSet("users", fmt.Sprint(user.ID), userStr).Err(); err != nil {
+		return nil, err
+	}
+	if err := s.redisClient.HSet("name2ID", user.Username, fmt.Sprint(user.ID)).Err(); err != nil {
 		return nil, err
 	}
 	return user, nil
