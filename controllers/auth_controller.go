@@ -108,7 +108,7 @@ func AccountRegister(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "用户名或密码错误"})
 		return
 	}
-	if userID != 0 {
+	if userID != "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "用户名已注册"})
 		return
 	}

@@ -5,6 +5,8 @@ import (
 	"game/database"
 	"game/models"
 	"game/utils"
+
+	"github.com/go-redis/redis"
 )
 
 func GetRedisAuth(userId int64) (userData *models.User, err error) {
@@ -12,6 +14,9 @@ func GetRedisAuth(userId int64) (userData *models.User, err error) {
 	cli := database.GetRedis()
 	UserValue, err := cli.Get(key).Result()
 	if err != nil {
+		if err == redis.Nil {
+			return nil, nil
+		}
 		return nil, err
 	}
 	userData = &models.User{}
@@ -70,14 +75,18 @@ func SetIDbyName(name string) (int64, error) {
 	return id, nil
 }
 
-func GetIDbyName(name string) (int64, error) {
+func GetIDbyName(name string) (string, error) {
 	key := utils.GetIDbyNameKey(name)
 	cli := database.GetRedis()
-	id, err := cli.Get(key).Int64()
+	id, err := cli.Get(key).Result()
+
 	if err != nil {
-		return 0, err
+		if err == redis.Nil {
+			return "", nil
+		}
+		return "", err
 	}
 	return id, nil
 }
-	
-// ============================== 
+
+// ==============================
