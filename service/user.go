@@ -64,8 +64,11 @@ func (s *UserService) CreateUser(req *CreateUserRequest) (user *models.User, err
 	if err := s.redisClient.HSet("users", fmt.Sprint(user.ID), userStr).Err(); err != nil {
 		return nil, err
 	}
-	if err := s.redisClient.HSet("name2ID", user.Username, fmt.Sprint(user.ID)).Err(); err != nil {
+	if err := s.redisClient.Set(utils.GetIDbyNameKey(user.Username), fmt.Sprint(user.ID), 0).Err(); err != nil {
 		return nil, err
 	}
+	// if err := s.redisClient.HSet("name2ID", user.Username, fmt.Sprint(user.ID)).Err(); err != nil {
+	// 	return nil, err
+	// }
 	return user, nil
 }
