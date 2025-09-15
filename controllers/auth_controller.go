@@ -141,6 +141,8 @@ func AccountRegister(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "生成token失败"})
 		}
+		//保存token到redis
+		redisClient.Set("token:"+token, userInfo.ID, 24*time.Hour)
 	}
 	// //TODO: 创建用户对象
 	// user := models.User{
@@ -234,6 +236,18 @@ func WechatRegister(c *gin.Context) {
 
 }
 
+type LoginRS struct {
+	Token string `json:"token"`
+	User  User   `json:"user"`
+}
+type User struct {
+	ID           int64  `json:"id"`
+	Username     string `json:"username"`
+	Exp          uint64 `json:"exp"`
+	Money        uint64 `json:"money"`
+	WechatOpenID string `json:"wechat_openid"`
+}
+
 // 用户名登录
 func UsernameLogin(c *gin.Context) {
 	type Request struct {
@@ -257,7 +271,15 @@ func UsernameLogin(c *gin.Context) {
 		return
 	}
 	//TODO: 登录成功返回token
-	c.JSON(http.StatusOK, gin.H{"message": "登录成功", "user_id": user.ID})
+	token, err := utils.GenerateToken(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成token失败"})
+		return
+	}
+	//保存token到redis
+	redisClient := database.GetRedis()
+	redisClient.Set("token:"+token, user.ID, 24*time.Hour)
+	c.JSON(http.StatusOK, gin.H{"message": "登录成功", "user_id": user.ID, "token": token})
 }
 
 func WechatLogin(c *gin.Context) {
